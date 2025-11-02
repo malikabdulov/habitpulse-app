@@ -1,73 +1,113 @@
 # HabitPulse
 
-HabitPulse is a full-stack habit tracking platform composed of a FastAPI backend, Flutter mobile client, PostgreSQL database, and observability with Prometheus and Grafana.
+HabitPulse — полнофункциональная система отслеживания привычек, включающая бэкенд на FastAPI, мобильное приложение на Flutter, базу данных PostgreSQL и мониторинг с использованием Prometheus и Grafana. Проект полностью готов для локального запуска через Docker Compose и содержит инструменты тестирования как для бэкенда, так и для мобильного клиента.
 
-## Project structure
+## Структура проекта
 
 ```
 habitpulse-app/
-├── backend/            # FastAPI application
-├── mobile/             # Flutter mobile client
-├── prometheus/         # Prometheus configuration
-├── grafana/            # Grafana dashboard
-├── docker-compose.yml  # Local infrastructure definition
-└── .env.example        # Sample environment configuration
+├── backend/            # Исходный код FastAPI, миграции Alembic и тесты
+├── mobile/             # Мобильное приложение Flutter
+├── prometheus/         # Конфигурация Prometheus
+├── grafana/            # Экспортированный дашборд Grafana
+├── docker-compose.yml  # Определение всех контейнеров
+└── .env.example        # Пример файла переменных окружения
 ```
 
-## Prerequisites
+## Предварительные требования
 
-- Docker and Docker Compose
-- Flutter SDK (for running the mobile client)
+Перед началом убедитесь, что установлены:
 
-## Getting started
+- Docker и Docker Compose
+- Flutter SDK (для запуска мобильного клиента)
+- Make (опционально, но удобно для группировки команд)
 
-1. Copy environment variables and adjust if necessary:
+## Настройка переменных окружения
+
+1. Создайте файл `.env` из примера и при необходимости отредактируйте значения:
    ```bash
    cp .env.example .env
    ```
+2. Проверьте переменные подключения к базе данных в `.env`:
+   - `POSTGRES_USER`
+   - `POSTGRES_PASSWORD`
+   - `POSTGRES_DB`
+   - `DATABASE_URL`
 
-2. Start the infrastructure:
+## Запуск инфраструктуры
+
+1. Соберите и запустите все сервисы:
    ```bash
-   docker compose up -d
+   docker compose up -d --build
    ```
-
-3. Run database migrations:
+2. Убедитесь, что контейнеры работают:
+   ```bash
+   docker compose ps
+   ```
+3. Примените миграции базы данных внутри контейнера `backend`:
    ```bash
    docker exec -it habitpulse-app-backend alembic upgrade head
    ```
-
-4. Access the services:
-   - API docs: http://localhost:8000/docs
+4. Проверьте доступность основных сервисов:
+   - Swagger UI с документацией API: http://localhost:8000/docs
    - Prometheus: http://localhost:9090
-   - Grafana: http://localhost:3000 (admin/admin)
+   - Grafana (логин/пароль по умолчанию `admin/admin`): http://localhost:3000
 
-5. Launch the Flutter app:
+## Запуск мобильного приложения Flutter
+
+1. Перейдите в директорию проекта Flutter:
    ```bash
    cd mobile/habitpulse
+   ```
+2. Установите зависимости:
+   ```bash
    flutter pub get
+   ```
+3. Запустите приложение, передав базовый URL API (для эмулятора Android используйте `10.0.2.2`):
+   ```bash
    flutter run --dart-define=HABITPULSE_API_BASE_URL=http://10.0.2.2:8000
    ```
+   Для реального устройства или iOS-симулятора укажите соответствующий хост, например `http://localhost:8000` при использовании прокси/туннеля.
 
-## Testing
+## Тестирование
 
-- Backend tests:
-  ```bash
-  cd backend
-  pytest
-  ```
+### Тесты бэкенда
 
-- Flutter widget tests:
-  ```bash
-  cd mobile/habitpulse
-  flutter test
-  ```
+1. Перейдите в директорию `backend`:
+   ```bash
+   cd backend
+   ```
+2. Запустите тесты Pytest:
+   ```bash
+   pytest
+   ```
+   При необходимости используйте переменные окружения для указания тестовой базы данных.
 
-## Monitoring
+### Тесты мобильного приложения
 
-Prometheus scrapes metrics from the backend at `/metrics`. Grafana ships with a dashboard (imported from `grafana/dashboard.json`) displaying request rate, latency percentiles, error counts, and the total number of tracked habits.
+1. Перейдите в директорию Flutter-проекта:
+   ```bash
+   cd mobile/habitpulse
+   ```
+2. Выполните виджет-тесты:
+   ```bash
+   flutter test
+   ```
 
-## Development notes
+## Мониторинг и аналитика
 
-- Alembic migrations are stored in `backend/alembic/versions`.
-- The backend automatically creates tables on start for convenience in local development, but migrations should be used to evolve the schema.
-- Update the Docker images or dependencies as needed before deploying to production.
+- Бэкенд автоматически экспортирует метрики по адресу `http://localhost:8000/metrics`.
+- Prometheus собирает данные каждые 5 секунд согласно `prometheus/prometheus.yml`.
+- Импортированный дашборд Grafana (`grafana/dashboard.json`) отображает:
+  - количество запросов к API;
+  - среднюю задержку ответов;
+  - количество ошибок;
+  - общее число привычек в базе.
+
+## Дополнительные рекомендации
+
+- Миграции Alembic размещены в `backend/alembic/versions`. Добавляйте новые миграции при изменении схемы базы данных.
+- Для разработки без Docker можно запустить FastAPI локально, установив зависимости из `backend/requirements.txt` и указав корректный `DATABASE_URL`.
+- Перед развертыванием в продакшн измените стандартные учетные данные Grafana и пароли базы данных.
+
+Удачной работы с HabitPulse!
