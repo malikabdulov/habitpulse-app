@@ -3,4 +3,4 @@ global:
 scrape_configs:
   - job_name: 'habitpulse-backend'
     static_configs:
-      - targets: ['backend:8000']
+      - targets: ['habitpulse-app-backend:8000']
