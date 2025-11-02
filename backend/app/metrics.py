@@ -14,13 +14,13 @@ _metrics_registered = False
 
 
 def register_metrics(app):
+    global _metrics_registered
+    if not _metrics_registered:
+        _instrumentator.instrument(app).expose(app, include_in_schema=False)
+        _metrics_registered = True
+
     @app.on_event("startup")
     async def _startup_metrics():
-        global _metrics_registered
-        if not _metrics_registered:
-            _instrumentator.instrument(app).expose(app, include_in_schema=False)
-            _metrics_registered = True
-
-        # Set the gauge to 0 on startup. Update this gauge elsewhere in the codebase
-        # whenever the number of habits changes to reflect real data.
+        # Set the gauge to 0 on startup. Update this gauge elsewhere in the
+        # codebase whenever the number of habits changes to reflect real data.
         habit_total_gauge.set(0)
